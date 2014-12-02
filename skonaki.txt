@@ -1,0 +1,9 @@
+http://arxiv.org/pdf/1403.5805.pdf
+http://www.mcs.anl.gov/research/projects/mpi/tutorial/mpiexmpl/src/jacobi/C/main.html
+http://www.netlib.org/utk/papers/mpi-book/node44.html
+http://homepages.math.uic.edu/~jan/mcs572/paritermeths.pdf
+
+
+# Tutorials
+http://mpitutorial.com/mpi-send-and-receive/
+
