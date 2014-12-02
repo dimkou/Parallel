@@ -1,0 +1,24 @@
+.phony: all clean
+
+all: fw fw_sr fw_tiled 
+
+CC=cilkc
+CFLAGS= -Wall -O3 -Wno-unused-variable
+
+HDEPS+=%.h
+
+OBJS=util.o
+
+fw: $(OBJS) fw.cilk 
+	$(CC) $(OBJS) $(CFLAGS) fw.cilk -o fw 
+fw_sr: $(OBJS) fw_sr.cilk
+	$(CC) $(OBJS) $(CFLAGS) fw_sr.cilk -o fw_sr 
+fw_tiled: $(OBJS) fw_tiled.cilk 
+	$(CC) $(CFLAGS) $(OBJS) fw_tiled.cilk -o fw_tiled 
+
+%.o: %.c $(HDEPS)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+clean:
+	rm -f *.o fw fw_sr fw_tiled 
+

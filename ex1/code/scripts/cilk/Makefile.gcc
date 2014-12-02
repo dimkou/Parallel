@@ -1,0 +1,29 @@
+.phony: all clean
+
+all: fw fw_sr fw_tiled 
+
+CC=/home/parallel/tools/bin/pps-gcc
+CFLAGS= -Wall -O3 -Wno-unused-variable
+
+export LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu:/home/parallel/tools/lib
+export LIBRARY_PATH=$(LD_LIBRARY_PATH)
+
+LIBS=-ldl -lcilkrts
+
+HDEPS+=%.h
+
+OBJS=util.o
+
+fw: $(OBJS) fw.c 
+	$(CC) $(OBJS) $(CFLAGS) fw.c -o fw  $(LIBS) -Wl,-rpath -Wl,/home/parallel/tools/lib
+fw_sr: $(OBJS) fw_sr.c 
+	$(CC) $(OBJS) $(CFLAGS) fw_sr.c -o fw_sr $(LIBS) -Wl,-rpath -Wl,/home/parallel/tools/lib
+fw_tiled: $(OBJS) fw_tiled.c 
+	$(CC) $(OBJS) $(CFLAGS) fw_tiled.c -o fw_tiled  $(LIBS) -Wl,-rpath -Wl,/home/parallel/tools/lib
+
+%.o: %.c $(HDEPS)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+clean:
+	rm -f *.o fw fw_sr fw_tiled 
+
