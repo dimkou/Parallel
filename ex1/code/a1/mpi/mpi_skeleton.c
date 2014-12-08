@@ -79,12 +79,11 @@ int main(int argc, char ** argv) {
 	//*************TODO*******************//
 
 
-
+ 
 	/*Fill your code here*/
 	
-
-
-
+    u_previous=allocate2d(global_padded[0]/local[0] + 2, global_padded[1]/local[1] + 2);
+    u_current= allocate2d(global_padded[0]/local[0] + 2, global_padded[1]/local[1] + 2);
 
 
      //************************************//
