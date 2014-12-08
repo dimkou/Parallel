@@ -6,4 +6,4 @@ http://homepages.math.uic.edu/~jan/mcs572/paritermeths.pdf
 
 # Tutorials
 http://mpitutorial.com/mpi-send-and-receive/
-
+http://www.hpcc.unn.ru/mskurs/ENG/PPT/CODES/ppc12_8.html
