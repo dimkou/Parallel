@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=-O3 -lm -Wall -fopenmp
+CFLAGS=-O3 -lm -Wall -fopenmp -DDEBUG
 
 all: jacobi
 
