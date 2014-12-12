@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <sys/time.h>
 #include <stdlib.h>
 #include <omp.h>
 #include "utils.h"
@@ -20,11 +21,11 @@ int main(int argc, char ** argv)
 	int global_padded[2];	  // dimensions if padding is needed
 
 	int grid[2];	      	// processors per dimension
-
-	// struct timeval tts, ttf, tcs, tcf; // total and computation timers(TODO: use them!)
+	double time = 0;
+	struct timeval tts, ttf, tcs, tcf; // total and computation timers(TODO: use them!)
 
 	double ** u_current, ** u_previous; // matrices for iterations
-
+	double ** swap;
 
 	
 	if (argc != 5)
@@ -98,24 +99,37 @@ int main(int argc, char ** argv)
 		
 				
 		while (!globalConv) {
+
+			#pragma omp single
+			{
+				gettimeofday(&tts, NULL);
+			}
+
 			jacobi(u_previous, u_current, i, endi, j, endj);
 			conv = converge(u_previous, u_current, i, endi, j, endj);
 			
+
 			#pragma omp atomic
 			converged += conv;
 
 			#pragma omp barrier
+
+			#pragma omp single
+			{
+				gettimeofday(&ttf, NULL);
+				time += (ttf.tv_sec - tts.tv_sec) + (ttf.tv_usec - tts.tv_usec) * 0.000001;
+			}
 			if (tid == 0) {
 				if (converged == nthreads) { globalConv = 1; }
 				else { converged = 0; }
-				if (! globalConv) { copy2d(u_previous, u_current, global[0], global[1]); }
+				if (! globalConv) { swap = u_previous; u_previous = u_current; u_current = swap; }
 			}
 			
 			#pragma omp barrier
 	
 		}
-
 	}
+	printf("Time: %.3lf\n", time);
 	fprint2d("test.out", u_current, global[0], global[1]);
 	return 0;
 }
