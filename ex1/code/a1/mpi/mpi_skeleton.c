@@ -82,10 +82,11 @@ int main(int argc, char ** argv) {
  
 	/*Fill your code here*/
 	
-    u_previous=allocate2d(global_padded[0]/local[0] + 2, global_padded[1]/local[1] + 2);
-    u_current= allocate2d(global_padded[0]/local[0] + 2, global_padded[1]/local[1] + 2);
-
-
+    u_previous=allocate2d(local[0] + 2, local[1] + 2);
+    u_current= allocate2d(local[0] + 2, local[1] + 2);
+    
+    init2d(u_previous, local[0] + 2, local[1] + 2);
+    init2d(u_current, local[0] + 2, local[1] + 2);
      //************************************//
 
   
@@ -108,23 +109,41 @@ int main(int argc, char ** argv) {
     MPI_Type_vector(local[0],local[1],local[1]+2,MPI_DOUBLE,&dummy);
     MPI_Type_create_resized(dummy,0,sizeof(double),&local_block);
     MPI_Type_commit(&local_block);
-
+    
 
     //----Rank 0 scatters the global matrix----//
 
 	//*************TODO*******************//
 
 
-
 	/*Fill your code here*/
+    if (rank == 0){
+        sendbuf = &(U[0][0]); //the address of the global matrix
+        int scounts[grid[0] * grid[1]]; //how many times I will send 
+        int disps[grid[0] * grid[1]]; //specifies the displacement
+        int offset = 0;
 
-
+        for (i = 0; i < (grid[0] * grid[1]); ++i)
+            scounts[i] = 1;
+        
+        for (i = 0; i < grid[0]; ++i){
+            for (j = 0; j < grid[1]; ++j){
+                disps[i * local[0] + j] = offset;
+                offset += local[1];
+            }
+        }
+            
+        for (i = 0; i < (grid[0] * grid[1]); ++i)
+                printf("%d ", disps[i]);
+    }
 
 	/*Make sure u_current and u_previous are
 		both initialized*/
 
-
-
+    
+    init2d(u_previous, local[0] + 2, local[1] + 2);
+    init2d(u_current, local[0] + 2, local[1] + 2);
+    
 
 
 
