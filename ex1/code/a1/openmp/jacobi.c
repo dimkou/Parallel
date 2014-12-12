@@ -43,17 +43,18 @@ int main(int argc, char ** argv)
 	int i; 
 	/* apply padding, if necessary, to match
 	 * dimensions to processor number */
-	for (i = 0; i < 2; i++) {
-        if (global[i] % grid[i]==0) {
+	for (i = 0; i < 2; i++) { 
+		if (global[i] % grid[i]==0) {
             local[i]= global[i] / grid[i];
-            global_padded[i] = global[i];
-        }
+            global_padded[i] = global[i]; 
+		}
         else 
 		{
             local[i] = (global[i] / grid[i]) + 1;
             global_padded[i] = local[i] * grid[i];
-        }
-    }
+		}
+	}
+
 
 	// allocate initial matrix, initialize random values on boundary
 	// and zero values on interior
