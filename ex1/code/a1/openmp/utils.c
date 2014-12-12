@@ -64,8 +64,15 @@ void fprint2d(char * s, double ** array, int dimX, int dimY) {
     FILE * f=fopen(s,"w");
     for (i=0;i<dimX;i++) {
         for (j=0;j<dimY;j++)
-            fprintf(f,"%lf ",array[i][j]);
+            fprintf(f,"%1.8lf ",array[i][j]);
         fprintf(f,"\n");
     }
     fclose(f);
+}
+
+void copy2d(double ** u_previous, double ** u_current, int dimX, int dimY) {
+	int i, j;
+	for (i = 0; i < dimX; i++)
+		for (j = 0; j < dimY; j++)
+			u_previous[i][j] = u_current[i][j];
 }

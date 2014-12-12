@@ -11,3 +11,4 @@ void init2d ( double ** array, int dimX, int dimY );
 void zero2d ( double ** array, int dimX, int dimY );
 void print2d ( double ** array, int dimX, int dimY );
 void fprint2d ( char * s, double ** array, int dimX, int dimY );
+void copy2d (double ** u_previous, double ** u_current, int dimX, int dimY);
