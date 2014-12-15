@@ -5,8 +5,8 @@
 
 int converge(double ** u_previous, double ** u_current, int i_min, int i_max, int j_min, int j_max) {
 	int i,j;
-	for (i=i_min;i<=i_max;i++)
-		for (j=j_min;j<=j_max;j++)
+	for (i = i_min; i <= i_max; i++)
+		for (j = j_min;j <= j_max; j++)
             if (fabs(u_current[i][j]-u_previous[i][j])>e) return 0;
     return 1;
 }
@@ -54,7 +54,7 @@ void print2d(double ** array, int dimX, int dimY) {
     int i,j;
     for (i=0;i<dimX;i++) {
         for (j=0;j<dimY;j++)
-            printf("%.6lf ",array[i][j]);
+            printf("%.7lf ",array[i][j]);
         printf("\n");
     }
 }
@@ -64,7 +64,7 @@ void fprint2d(char * s, double ** array, int dimX, int dimY) {
     FILE * f=fopen(s,"w");
     for (i=0;i<dimX;i++) {
         for (j=0;j<dimY;j++)
-            fprintf(f,"%.6lf ",array[i][j]);
+            fprintf(f,"%.7lf ",array[i][j]);
         fprintf(f,"\n");
     }
     fclose(f);

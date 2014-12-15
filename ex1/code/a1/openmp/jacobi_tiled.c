@@ -101,30 +101,30 @@ int main(int argc, char ** argv)
 
 			if ((iter % C) == 0) {
 				conv = 1;
-				for (j = 1; j < global[1] - 1; j++) {
-					conv &= converge(u_previous, u_current, i, endi, j, j);	
+				for (j = 1; j < global[1] ; j++) {
+					conv &= converge(u_previous, u_current, i, endi-1, j, j);	
 				}
 				#pragma omp atomic
-				converged &= conv;
+				converged += conv;
 			}
 
 			#pragma omp barrier
 
 			if ((iter % C == 0) && (tid == 0)) {
-				if (converged == 1) { globalConv = 1; }
-				converged = 1;
+				if (converged == nthreads) { globalConv = 1; printf("Globalconv! %d\n", globalConv); }
 			}
 			
 			#pragma omp single
 			{
+                converged = 0;
 				swap = u_previous; u_previous = u_current; u_current = swap;
 				++iter;
 			}
 
-			#pragma omp barrier
 	
 		}
 	}
+    printf("Iters: %d\n", iter);
 	fprint2d("test.out", u_current, global[0], global[1]);
 	return 0;
 }

@@ -21,8 +21,8 @@ int main(int argc, char ** argv)
 	int global_padded[2];	  // dimensions if padding is needed
 
 	int grid[2];	      	// processors per dimension
-	double time = 0;
-	struct timeval tts, ttf, tcs, tcf; // total and computation timers(TODO: use them!)
+	double time = 0 , compTime = 0;
+	struct timeval tts, ttf;  // total and computation timers(TODO: use them!)
 
 	double ** u_current, ** u_previous; // matrices for iterations
 	double ** swap;
@@ -75,12 +75,15 @@ int main(int argc, char ** argv)
 	// convergence flags
 	int converged = 0;
 	int globalConv = 0;
+	int iters = 0;
 
-	#pragma omp parallel
+	#pragma omp parallel reduction(+:compTime)
 	{
 		// calculate block limits
 		int tid = omp_get_thread_num();
 		int i, j, endi, endj, conv;
+        conv = 0;
+        struct timeval tcs, tcf;
 
 		i = (global_padded[0] / grid[0]) * (tid % grid[0]);
 		j = (global_padded[1] / grid[1]) * (tid / grid[0]);
@@ -102,11 +105,18 @@ int main(int argc, char ** argv)
 
 			#pragma omp single
 			{
+                ++iters;
 				gettimeofday(&tts, NULL);
 			}
 
+            gettimeofday(&tcs, NULL);
 			jacobi(u_previous, u_current, i, endi, j, endj);
-			conv = converge(u_previous, u_current, i, endi, j, endj);
+            gettimeofday(&tcf, NULL);
+            compTime += (tcf.tv_sec - tcs.tv_sec) + (tcf.tv_usec - tcs.tv_usec) * 0.000001;
+ 
+			if ((iters % C) == 0) {
+				conv = converge(u_previous, u_current, i, endi, j, endj);
+			}
 			
 
 			#pragma omp atomic
@@ -114,22 +124,20 @@ int main(int argc, char ** argv)
 
 			#pragma omp barrier
 
-			#pragma omp single
-			{
-				gettimeofday(&ttf, NULL);
-				time += (ttf.tv_sec - tts.tv_sec) + (ttf.tv_usec - tts.tv_usec) * 0.000001;
-			}
-			if (tid == 0) {
+			if ((iters % C == 0) && (tid == 0)) {
 				if (converged == nthreads) { globalConv = 1; }
-				else { converged = 0; }
-				if (! globalConv) { swap = u_previous; u_previous = u_current; u_current = swap; }
 			}
-			
-			#pragma omp barrier
+			#pragma omp single
+			{ 
+                converged = 0;
+                swap = u_previous; u_previous = u_current; u_current = swap; ++iters; 
+                gettimeofday(&ttf, NULL);
+                time += (ttf.tv_sec - tts.tv_sec) + (ttf.tv_usec - tts.tv_usec) * 0.000001;
+            }
 	
 		}
 	}
-	printf("Time: %.3lf\n", time);
+	printf("Iters: %d Time: %.3lf   Computation: %.3lf\n", iters, time, (compTime / nthreads));
 	fprint2d("test.out", u_current, global[0], global[1]);
 	return 0;
 }

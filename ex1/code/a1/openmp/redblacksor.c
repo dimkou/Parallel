@@ -36,10 +36,10 @@ int main(int argc, char ** argv)
 	int global[2], local[2];  // global/local matrix dim
 	int global_padded[2];	  // dimensions if padding is needed
 
-	int grid[2];	      	// processors per dimension
+	int grid[2];	      	// processors 
 	double time = 0;
 	double timeTot = 0;
-	struct timeval tts, ttf, tcs, tcf; // total and computation timers(TODO: use them!)
+	struct timeval tts, ttf; // total and computation timers(TODO: use them!)
 
 	double ** u_current, ** u_previous, ** swap; // matrices for iterations
 	double omega;
@@ -54,7 +54,7 @@ int main(int argc, char ** argv)
 		global[0] = atoi(argv[1]);
 		global[1] = atoi(argv[2]);
 		grid[0] = atoi(argv[3]);
-		grid[1] = atoi(argv[4]);
+        grid[1] = atoi(argv[4]);
 	}
 	
 	omega = 2.0 / (1 + sin(3.14 / global[0]));
@@ -63,7 +63,7 @@ int main(int argc, char ** argv)
 	/* apply padding, if necessary, to match
 	 * dimensions to processor number */
 	for (i = 0; i < 2; i++) { 
-		if (global[i] % grid[i]==0) {
+		if (global[i] % grid[i] ==0) {
             local[i]= global[i] / grid[i];
             global_padded[i] = global[i]; 
 		}
@@ -93,13 +93,16 @@ int main(int argc, char ** argv)
 	// convergence flags
 	int converged = 0;
 	int globalConv = 0;
-	
+	int iters = 0;
+    double compTime = 0;
 
-	#pragma omp parallel
+	#pragma omp parallel reduction(+:compTime)
 	{
 		// calculate block limits
 		int tid = omp_get_thread_num();
-		int i, j, endi, endj, conv;
+		int i, j, endi, endj;
+        int conv = 0;
+        struct timeval tcs, tcf;
 
 		i = (global_padded[0] / grid[0]) * (tid % grid[0]);
 		j = (global_padded[1] / grid[1]) * (tid / grid[0]);
@@ -120,42 +123,46 @@ int main(int argc, char ** argv)
 
 			#pragma omp single
 			{
-				gettimeofday(&tcs, NULL);
+                ++iters;
+				gettimeofday(&tts, NULL);
 			}
 
 			// red updates all even elements of matrix
+            gettimeofday(&tcs, NULL);
 			red(u_previous, u_current, i, endi, j, endj, omega);
 
 			#pragma omp barrier
 
 			black(u_previous, u_current, i, endi, j, endj, omega);
+            gettimeofday(&tcf, NULL);
+
+            compTime += (tcf.tv_sec - tcs.tv_sec) + (tcf.tv_usec - tcs.tv_usec) * 0.000001;
 
 
-			#pragma omp single
-			{
-				gettimeofday(&tcf, NULL);
-				time += (tcf.tv_sec - tcs.tv_sec) + (tcf.tv_usec - tcs.tv_usec) * 0.000001;
-			}
+			
 			// check local convergence (no need for barrier here!)
 			conv = converge(u_previous, u_current, i, endi, j, endj);
-
 			#pragma omp atomic
 			converged += conv;
 
 			#pragma omp barrier
 			
-			if (tid == 0) {
+			if ((iters % C == 0) && (tid == 0)) {
 				if (converged == nthreads) { globalConv = 1; }
-				else { converged = 0; }
-				if (! globalConv) { swap = u_previous; u_previous = u_current; u_current = swap;  }
 			}
 			
 			// synchronize before next loop for correct clock ticking
-			#pragma omp barrier
+            #pragma omp single
+			{
+                converged = 0;
+                swap = u_previous; u_previous = u_current; u_current = swap;
+				gettimeofday(&ttf, NULL);
+				time += (ttf.tv_sec - tts.tv_sec) + (ttf.tv_usec - tts.tv_usec) * 0.000001;
+			}
 	
 		}
 	}
-	printf("Computation time: %.3lf\n", time);
+	printf("Iters: %d Time: %.3lf   Computation: %.3lf\n", iters, time, (compTime/ nthreads));
 	fprint2d("test.out", u_current, global[0], global[1]);
 	return 0;
 }
