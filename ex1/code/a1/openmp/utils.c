@@ -54,7 +54,7 @@ void print2d(double ** array, int dimX, int dimY) {
     int i,j;
     for (i=0;i<dimX;i++) {
         for (j=0;j<dimY;j++)
-            printf("%lf ",array[i][j]);
+            printf("%.6lf ",array[i][j]);
         printf("\n");
     }
 }
@@ -64,7 +64,7 @@ void fprint2d(char * s, double ** array, int dimX, int dimY) {
     FILE * f=fopen(s,"w");
     for (i=0;i<dimX;i++) {
         for (j=0;j<dimY;j++)
-            fprintf(f,"%1.8lf ",array[i][j]);
+            fprintf(f,"%.6lf ",array[i][j]);
         fprintf(f,"\n");
     }
     fclose(f);
