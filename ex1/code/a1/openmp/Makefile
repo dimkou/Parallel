@@ -18,5 +18,5 @@ jacobi_tiled: jacobi_tiled.c utils.c
 	$(CC) $(CFLAGS) jacobi_tiled.c utils.c -o jacobi_tiled
 	
 clean:
-	rm jacobi redblacksor seidelsor jacobi_tiled
+	rm jacobi redblacksor seidelsor jacobi_tiled test.out
 

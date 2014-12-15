@@ -130,7 +130,7 @@ int main(int argc, char ** argv)
 			#pragma omp single
 			{ 
                 converged = 0;
-                swap = u_previous; u_previous = u_current; u_current = swap; ++iters; 
+                swap = u_previous; u_previous = u_current; u_current = swap;  
                 gettimeofday(&ttf, NULL);
                 time += (ttf.tv_sec - tts.tv_sec) + (ttf.tv_usec - tts.tv_usec) * 0.000001;
             }
