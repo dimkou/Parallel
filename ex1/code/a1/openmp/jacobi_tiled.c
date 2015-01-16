@@ -21,7 +21,7 @@ int main(int argc, char ** argv)
 	int global_padded[2];	  // dimensions if padding is needed
 
 	int grid;	  		      	// processors per dimension
-	struct timeval tts, ttf, tcs, tcf; // total and computation timers(TODO: use them!)
+	struct timeval tts, ttf; // total and computation timers(TODO: use them!)
 
 	double ** u_current, ** u_previous; // matrices for iterations
 	double ** swap;
@@ -38,7 +38,7 @@ int main(int argc, char ** argv)
 		grid = atoi(argv[3]);
 	}
 	
-	int i; 
+    double time = 0;
 	/* apply padding, if necessary, to match
 	 * dimension to processor number */
 	if (global[0] % grid == 0) {
@@ -71,10 +71,13 @@ int main(int argc, char ** argv)
 	// set number of threads
 	int nthreads = grid;
 	omp_set_num_threads(nthreads);
+    double compTime = 0;
+
+    double * comps = calloc(nthreads, sizeof(double));
 
 	// convergence flags
 	int converged = 1;
-	int globalConv = 0; int iter = 1;
+	int globalConv = 0; int iter = 0;
 	#pragma omp parallel
 	{
 		// calculate block limits
@@ -82,6 +85,7 @@ int main(int argc, char ** argv)
 		int i = (global_padded[0] / grid) * (tid % grid);
 		int endi = ( (i + local) < global[0]) ? i + local : global[0] - 1;
 		int j, conv;
+        struct timeval tcs, tcf;
 		conv = 1;
 		// fix start limits for edges of matrix
 		i += (i == 0);
@@ -90,18 +94,24 @@ int main(int argc, char ** argv)
 			printf("Thread %d gets (%d-%d) indices with range %d\n", tid, i, endi, local);
 		#endif
 		
-				
 		while (!globalConv) {
+
+            #pragma omp single
+            {
+                ++iter;
+                gettimeofday(&tts, NULL);
+            }
 
 			gettimeofday(&tcs, NULL);
 			for (j = 1; j < global[1] - 1; j++) {
 				jacobi(u_previous, u_current, i, endi, j, j+1);
 			}
 			gettimeofday(&tcf, NULL);
+            comps[tid] += (tcf.tv_sec - tcs.tv_sec) + (tcf.tv_usec - tcs.tv_usec) * 0.000001;
 
 			if ((iter % C) == 0) {
 				conv = 1;
-				for (j = 1; j < global[1] ; j++) {
+				for (j = 1; j < global[1] - 1 ; j++) {
 					conv &= converge(u_previous, u_current, i, endi-1, j, j);	
 				}
 				#pragma omp atomic
@@ -111,20 +121,26 @@ int main(int argc, char ** argv)
 			#pragma omp barrier
 
 			if ((iter % C == 0) && (tid == 0)) {
-				if (converged == nthreads) { globalConv = 1; printf("Globalconv! %d\n", globalConv); }
+				if (converged == nthreads) { globalConv = 1; }
 			}
 			
 			#pragma omp single
 			{
                 converged = 0;
 				swap = u_previous; u_previous = u_current; u_current = swap;
-				++iter;
+                gettimeofday(&ttf, NULL);
+                time += (ttf.tv_sec - tts.tv_sec) + (ttf.tv_usec - tts.tv_usec) * 0.000001;
 			}
 
 	
 		}
 	}
-    printf("Iters: %d\n", iter);
-	fprint2d("test.out", u_current, global[0], global[1]);
+    for (converged = 0; converged < nthreads; ++converged)
+    {
+        compTime = (compTime > comps[converged]) ? compTime : comps[converged];
+        //printf("Thread[%d]: %.4lf\n", converged, comps[converged]);
+    }
+    printf("Tiled Jacobi\tIters: %d Time: %.3lf \t Computation: %.3lf\n", iter, time, compTime);
+	fprint2d("testtiled.out", u_current, global[0], global[1]);
 	return 0;
 }

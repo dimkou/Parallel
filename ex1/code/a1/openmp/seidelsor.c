@@ -21,6 +21,9 @@ void gauss(double ** u_previous, double ** u_current, int start_x,
 				}
 				// iteration is done diagonally
 				// for <range> times
+                else {
+                    break;
+                }
 				++i; --j; ++ct;
 	}
 }
@@ -67,15 +70,21 @@ int main(int argc, char ** argv)
     int iters = 0;
 
     double time = 0, compTime = 0;
+    double * comps = calloc(nthreads, sizeof(double));
 
-	#pragma omp parallel reduction(+:compTime)
+	#pragma omp parallel 
 	{
 		int tid = omp_get_thread_num();
 		int local_i, local_j, range;
 		int x, y, wavefront;
         struct timeval tcs, tcf;
-		while (!globalConv) 
-		{
+    
+        #ifndef SCALE
+		while (!globalConv) {
+        #endif
+        #ifdef SCALE
+        while (iters < 256) {
+        #endif
             #pragma omp single
             {
                 ++iters;
@@ -110,7 +119,7 @@ int main(int argc, char ** argv)
                     gettimeofday(&tcs, NULL);
 					gauss(u_previous, u_current, local_i, local_j, range, global[0], global[1], omega);
                     gettimeofday(&tcf, NULL);
-                    compTime += (tcf.tv_sec - tcs.tv_sec) + (tcf.tv_usec - tcs.tv_usec) * 0.000001;
+                    comps[tid] += (tcf.tv_sec - tcs.tv_sec) + (tcf.tv_usec - tcs.tv_usec) * 0.000001;
 					
 					++y;
 					// synchronize before next loop for correct clock ticking
@@ -129,7 +138,10 @@ int main(int argc, char ** argv)
 
 				#pragma omp barrier
 			
+                gettimeofday(&tcs, NULL);
 				gauss(u_previous, u_current, local_i, local_j, range, global[0], global[1], omega);
+                gettimeofday(&tcf, NULL);
+                comps[tid] += (tcf.tv_sec - tcs.tv_sec) + (tcf.tv_usec - tcs.tv_usec) * 0.000001;
 				
 				++x;
 				// synchronize before next loop for correct clock ticking
@@ -140,9 +152,12 @@ int main(int argc, char ** argv)
 
 			#pragma omp barrier
 			
+            #ifndef SCALE
 			if ((iters % C == 0) && (tid == 0)) {
 				if (converge(u_previous, u_current, 1, global[1]-1, 1, global[0]-1)) { globalConv = 1; }
 			}
+            #endif
+
 			#pragma omp single
             {
                 swap = u_previous; u_previous = u_current; u_current = swap; 
@@ -153,7 +168,11 @@ int main(int argc, char ** argv)
 		}
 	}
 
-	printf("Time: %.3lf   Computation: %.3lf\n", time, (compTime / nthreads));
-	fprint2d("test.out", u_current, global[0], global[1]);
+    int i;
+    for (i = 0; i < nthreads; ++i)
+        compTime = (compTime >= comps[i]) ? compTime : comps[i];
+
+	printf("SeidelSOR\tIters: %d Time: %.3lf \t Computation: %.3lf\n", iters, time, compTime);
+	fprint2d("testseidel.out", u_current, global[0], global[1]);
 	return 0;
 }

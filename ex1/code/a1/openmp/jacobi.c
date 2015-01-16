@@ -77,6 +77,7 @@ int main(int argc, char ** argv)
 	int globalConv = 0;
 	int iters = 0;
 
+	gettimeofday(&tts, NULL);
 	#pragma omp parallel reduction(+:compTime)
 	{
 		// calculate block limits
@@ -106,7 +107,6 @@ int main(int argc, char ** argv)
 			#pragma omp single
 			{
                 ++iters;
-				gettimeofday(&tts, NULL);
 			}
 
             gettimeofday(&tcs, NULL);
@@ -130,14 +130,15 @@ int main(int argc, char ** argv)
 			#pragma omp single
 			{ 
                 converged = 0;
-                swap = u_previous; u_previous = u_current; u_current = swap; ++iters; 
-                gettimeofday(&ttf, NULL);
-                time += (ttf.tv_sec - tts.tv_sec) + (ttf.tv_usec - tts.tv_usec) * 0.000001;
-            }
+                swap = u_previous; u_previous = u_current; u_current = swap;  
+           }
 	
 		}
-	}
-	printf("Iters: %d Time: %.3lf   Computation: %.3lf\n", iters, time, (compTime / nthreads));
-	fprint2d("test.out", u_current, global[0], global[1]);
+	}             
+    gettimeofday(&ttf, NULL);
+    time += (ttf.tv_sec - tts.tv_sec) + (ttf.tv_usec - tts.tv_usec) * 0.000001;
+    
+	printf("Simple Jacobi - Iters: %d Time: %.3lf   Computation: %.3lf\n", iters, time, (compTime / nthreads));
+	fprint2d("testjacobi.out", u_current, global[0], global[1]);
 	return 0;
 }

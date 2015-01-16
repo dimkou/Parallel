@@ -38,7 +38,6 @@ int main(int argc, char ** argv)
 
 	int grid[2];	      	// processors 
 	double time = 0;
-	double timeTot = 0;
 	struct timeval tts, ttf; // total and computation timers(TODO: use them!)
 
 	double ** u_current, ** u_previous, ** swap; // matrices for iterations
@@ -58,7 +57,6 @@ int main(int argc, char ** argv)
 	}
 	
 	omega = 2.0 / (1 + sin(3.14 / global[0]));
-	printf("Omega: %lf\n", omega);
 	int i; 
 	/* apply padding, if necessary, to match
 	 * dimensions to processor number */
@@ -95,8 +93,9 @@ int main(int argc, char ** argv)
 	int globalConv = 0;
 	int iters = 0;
     double compTime = 0;
+    double * comps = calloc(nthreads, sizeof(double));
 
-	#pragma omp parallel reduction(+:compTime)
+	#pragma omp parallel 
 	{
 		// calculate block limits
 		int tid = omp_get_thread_num();
@@ -118,7 +117,7 @@ int main(int argc, char ** argv)
 		#ifdef DEBUG
 			printf("Thread %d/%d gets (%d-%d, %d-%d) indices\n", tid, nthreads, i, endi, j, endj);
 		#endif
-		
+	    
 		while (!globalConv) {
 
 			#pragma omp single
@@ -131,12 +130,11 @@ int main(int argc, char ** argv)
             gettimeofday(&tcs, NULL);
 			red(u_previous, u_current, i, endi, j, endj, omega);
 
-			#pragma omp barrier
 
 			black(u_previous, u_current, i, endi, j, endj, omega);
             gettimeofday(&tcf, NULL);
 
-            compTime += (tcf.tv_sec - tcs.tv_sec) + (tcf.tv_usec - tcs.tv_usec) * 0.000001;
+            comps[tid] += (tcf.tv_sec - tcs.tv_sec) + (tcf.tv_usec - tcs.tv_usec) * 0.000001;
 
 
 			
@@ -146,7 +144,7 @@ int main(int argc, char ** argv)
 			converged += conv;
 
 			#pragma omp barrier
-			
+	
 			if ((iters % C == 0) && (tid == 0)) {
 				if (converged == nthreads) { globalConv = 1; }
 			}
@@ -162,7 +160,10 @@ int main(int argc, char ** argv)
 	
 		}
 	}
-	printf("Iters: %d Time: %.3lf   Computation: %.3lf\n", iters, time, (compTime/ nthreads));
-	fprint2d("test.out", u_current, global[0], global[1]);
+    for (i = 0; i < nthreads; ++i)
+        compTime = (compTime >= comps[i]) ? compTime : comps[i];
+
+	printf("RedBlackSOR\tIters: %d Time: %.3lf \t Computation: %.3lf\n", iters, time, compTime);
+	fprint2d("testredblack.out", u_current, global[0], global[1]);
 	return 0;
 }
