@@ -122,8 +122,6 @@ int main(int argc, char ** argv)
 			#pragma omp atomic
 			converged += conv;
 
-			#pragma omp barrier
-
 			if ((iters % C == 0) && (tid == 0)) {
 				if (converged == nthreads) { globalConv = 1; }
 			}
@@ -131,8 +129,7 @@ int main(int argc, char ** argv)
 			{ 
                 converged = 0;
                 swap = u_previous; u_previous = u_current; u_current = swap;  
-           }
-	
+            }
 		}
 	}             
     gettimeofday(&ttf, NULL);

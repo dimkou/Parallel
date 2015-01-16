@@ -19,6 +19,8 @@ void gauss(double ** u_previous, double ** u_current, int start_x,
 					u_current[i][j] = u_previous[i][j] + (omega / 4.0) * (u_current[i-1][j] + u_current[i][j-1] + 
 									  u_previous[i+1][j] + u_previous[i][j+1] - 4 * u_previous[i][j]);
 				}
+				else 
+					break;
 				// iteration is done diagonally
 				// for <range> times
                 else {

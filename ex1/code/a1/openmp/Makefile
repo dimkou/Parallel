@@ -4,18 +4,6 @@ MATH=-lm
 
 all: jacobi redblacksor seidelsor jacobi_tiled
 
-scaled: jacobi_tiled_s redblacksor_s seidelsor_s
-
-redblacksor_s: redblacksor_scaled.c utils.c
-	$(CC) $(CFLAGS) redblacksor_scaled.c utils.c -o redblacksor_s $(MATH)
-
-seidelsor_s: seidelsor_scaled.c utils.c
-	$(CC) $(CFLAGS) seidelsor_scaled.c utils.c -o seidelsor_s $(MATH)
-
-jacobi_tiled_s: jacobi_tiled_scaled.c utils.c
-	$(CC) $(CFLAGS) jacobi_tiled_scaled.c utils.c -o jacobi_tiled_s
-	
-
 jacobi: jacobi.c utils.c 
 	$(CC) $(CFLAGS) jacobi.c utils.c -o jacobi
 
@@ -29,5 +17,5 @@ jacobi_tiled: jacobi_tiled.c utils.c
 	$(CC) $(CFLAGS) jacobi_tiled.c utils.c -o jacobi_tiled
 	
 clean:
-	rm jacobi redblacksor seidelsor jacobi_tiled jacobi_tiled_s seidelsor_s redblacksor_s
+	rm jacobi redblacksor seidelsor jacobi_tiled test.out
 
