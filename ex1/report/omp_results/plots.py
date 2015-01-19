@@ -36,10 +36,5 @@ for key in keys:
         plt.ylabel('Time')
         plt.title(keys[key])
         plt.legend()
-
         plt.savefig('bars{}{}.png'.format(key, msize), ext="png")
-
-
-
-
 
