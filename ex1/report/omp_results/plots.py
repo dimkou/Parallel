@@ -34,7 +34,7 @@ for key in keys:
         # set titles and graphics
         plt.xlabel('Threads')
         plt.ylabel('Time')
-        plt.title(keys[key])
+        plt.title('{0} - {1}x{1}'.format(keys[key], msize))
         plt.legend()
         plt.savefig('bars{}{}.png'.format(key, msize), ext="png")
 
