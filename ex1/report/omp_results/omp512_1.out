@@ -1,0 +1,28 @@
+gcc -O3 -g -Wall -fopenmp jacobi.c utils.c -o jacobi
+gcc -O3 -g -Wall -fopenmp redblacksor.c utils.c -o redblacksor -lm
+gcc -O3 -g -Wall -fopenmp seidelsor.c utils.c -o seidelsor -lm
+gcc -O3 -g -Wall -fopenmp jacobi_tiled.c utils.c -o jacobi_tiled
+Tiled Jacobi	 Threads: 1	 Time: 2.855 	 Computation: 2.854
+SeidelSOR	Threads: 1	 Time: 1.403 	 Computation: 1.260
+Tiled Jacobi	 Threads: 2	 Time: 0.795 	 Computation: 0.794
+SeidelSOR	Threads: 2	 Time: 0.951 	 Computation: 0.656
+Tiled Jacobi	 Threads: 3	 Time: 0.501 	 Computation: 0.500
+SeidelSOR	Threads: 3	 Time: 0.769 	 Computation: 0.451
+Tiled Jacobi	 Threads: 4	 Time: 0.302 	 Computation: 0.301
+SeidelSOR	Threads: 4	 Time: 0.729 	 Computation: 0.367
+Tiled Jacobi	 Threads: 5	 Time: 0.244 	 Computation: 0.243
+SeidelSOR	Threads: 5	 Time: 0.691 	 Computation: 0.318
+Tiled Jacobi	 Threads: 6	 Time: 0.211 	 Computation: 0.209
+SeidelSOR	Threads: 6	 Time: 0.693 	 Computation: 0.286
+Tiled Jacobi	 Threads: 7	 Time: 0.184 	 Computation: 0.183
+SeidelSOR	Threads: 7	 Time: 0.705 	 Computation: 0.268
+Tiled Jacobi	 Threads: 8	 Time: 0.159 	 Computation: 0.158
+SeidelSOR	Threads: 8	 Time: 0.725 	 Computation: 0.255
+RedBlackSOR	Threads: 1	 Time: 1.069 	 Computation: 1.069
+RedBlackSOR	Threads: 2	 Time: 0.724 	 Computation: 0.723
+RedBlackSOR	Threads: 3	 Time: 0.533 	 Computation: 0.532
+RedBlackSOR	Threads: 4	 Time: 0.346 	 Computation: 0.345
+RedBlackSOR	Threads: 5	 Time: 0.445 	 Computation: 0.433
+RedBlackSOR	Threads: 6	 Time: 0.274 	 Computation: 0.273
+RedBlackSOR	Threads: 7	 Time: 0.491 	 Computation: 0.473
+RedBlackSOR	Threads: 8	 Time: 0.310 	 Computation: 0.309
