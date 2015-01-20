@@ -1,5 +1,5 @@
 # Fdb version 3
-["pdflatex"] 1421762803 "final.tex" "final.pdf" "final" 1421762805
+["pdflatex"] 1421785922 "final.tex" "final.pdf" "final" 1421785924
   "/etc/texmf/web2c/texmf.cnf" 1402249501 1101 af7716885e081ab43982cab7b4672c1a ""
   "/usr/share/texlive/texmf-dist/fonts/map/fontname/texfonts.map" 1272929888 3287 e6b82fe08f5336d4d5ebc73fb1152e87 ""
   "/usr/share/texlive/texmf-dist/fonts/tfm/public/amsfonts/cmextra/cmex7.tfm" 1246382020 1004 54797486969f23fa377b128694d548df ""
@@ -94,8 +94,8 @@
   "barstjb1024.png" 1421745244 21612 34048b3ed299473ceb11edb5a4f66f76 ""
   "barstjb2048.png" 1421745246 22709 74a6163a9871a44bc143da08d9fcb3db ""
   "barstjb512.png" 1421745242 22078 f4b1c05065d2d50a74943136fa727097 ""
-  "final.aux" 1421762803 328 5e90745df4869b8f9ea9d702689e0dab ""
-  "final.tex" 1421762801 14637 184fcd76cab3d5df85f7ec15251554b8 ""
+  "final.aux" 1421785923 328 5e90745df4869b8f9ea9d702689e0dab ""
+  "final.tex" 1421785921 14635 fd54a83b9d52e6e5c117b0fb87c42066 ""
   "scalejacobi.png" 1421744793 39064 35b9a565587374df59602dbf81e8564e ""
   "scalerbl.png" 1421745248 56052 23fc4e93516978d2f3af0a3549563931 ""
   "scaleredblack.png" 1421744795 41539 2bde2b24db1634ebf060a94d72437fdc ""
@@ -104,6 +104,6 @@
   "scaletjb.png" 1421745250 38881 4280d6e9de6884590a7d9aa2d9234abb ""
   "seidelFlow.eps" 1421757993 40941 e89261e5fe5b801bf27540a0d63d17cd ""
   (generated)
+  "final.pdf"
   "final.aux"
   "final.log"
-  "final.pdf"
