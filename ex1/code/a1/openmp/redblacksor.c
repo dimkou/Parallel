@@ -1,33 +1,48 @@
 #include <stdio.h>
+#include <unistd.h>
 #include <sys/time.h>
 #include <stdlib.h>
 #include <omp.h>
 #include "utils.h"
+#include <math.h>
 
-void jacobi(double ** u_previous, double ** u_current, int min_x, int max_x, int min_y, int max_y) 
+void red(double ** u_previous, double ** u_current, int min_x, 
+		 int max_x, int min_y, int max_y, double omega) 
 {
 	// computational core here
 	// called from within threads
 	int i, j;
 	for (i = min_x; i < max_x; i++)
 		for (j = min_y; j < max_y; j++)
-			u_current[i][j] = (u_previous[i-1][j] + u_previous[i][j-1] + u_previous[i+1][j] + u_previous[i][j+1]) / 4.0;
+			if ( (i + j) % 2 == 0)
+				u_current[i][j] = u_previous[i][j] + (omega / 4.0) * (u_previous[i-1][j] + u_previous[i][j-1] + u_previous[i+1][j] + u_previous[i][j+1] - 4 * u_previous[i][j]);
 }
 
+void black(double ** u_previous, double ** u_current, int min_x, 
+		 int max_x, int min_y, int max_y, double omega) 
+{
+	// computational core here
+	// called from within threads
+	int i, j;
+	for (i = min_x; i < max_x; i++)
+		for (j = min_y; j < max_y; j++)
+			if ( (i + j) % 2 == 1)
+				u_current[i][j] = u_previous[i][j] + (omega / 4.0) * (u_current[i-1][j] + u_current[i][j-1] + u_current[i+1][j] + u_current[i][j+1] - 4 * u_previous[i][j]);
+				// it is safe to concurrently access u_current here, as other black tiles are not horizontally or vertically adjacent
+}
 
 int main(int argc, char ** argv)
 {
 	int global[2], local[2];  // global/local matrix dim
 	int global_padded[2];	  // dimensions if padding is needed
 
-	int grid[2];	      	// processors per dimension
-	double time = 0 , compTime = 0;
-	struct timeval tts, ttf;  // total and computation timers(TODO: use them!)
+	int grid[2];	      	// processors 
+	double time = 0;
+	struct timeval tts, ttf; // total and computation timers(TODO: use them!)
 
-	double ** u_current, ** u_previous; // matrices for iterations
-	double ** swap;
-
-	
+	double ** u_current, ** u_previous, ** swap; // matrices for iterations
+	double omega;
+		
 	if (argc != 5)
 	{
 		fprintf(stderr, "Usage: ./execname X Y Px Py\n");
@@ -38,14 +53,15 @@ int main(int argc, char ** argv)
 		global[0] = atoi(argv[1]);
 		global[1] = atoi(argv[2]);
 		grid[0] = atoi(argv[3]);
-		grid[1] = atoi(argv[4]);
+        grid[1] = atoi(argv[4]);
 	}
 	
+	omega = 2.0 / (1 + sin(3.14 / global[0]));
 	int i; 
 	/* apply padding, if necessary, to match
 	 * dimensions to processor number */
 	for (i = 0; i < 2; i++) { 
-		if (global[i] % grid[i]==0) {
+		if (global[i] % grid[i] ==0) {
             local[i]= global[i] / grid[i];
             global_padded[i] = global[i]; 
 		}
@@ -76,14 +92,15 @@ int main(int argc, char ** argv)
 	int converged = 0;
 	int globalConv = 0;
 	int iters = 0;
+    double compTime = 0;
+    double * comps = calloc(nthreads, sizeof(double));
 
-	gettimeofday(&tts, NULL);
-	#pragma omp parallel reduction(+:compTime)
+	#pragma omp parallel 
 	{
 		// calculate block limits
 		int tid = omp_get_thread_num();
-		int i, j, endi, endj, conv;
-        conv = 0;
+		int i, j, endi, endj;
+        int conv = 0;
         struct timeval tcs, tcf;
 
 		i = (global_padded[0] / grid[0]) * (tid % grid[0]);
@@ -100,42 +117,53 @@ int main(int argc, char ** argv)
 		#ifdef DEBUG
 			printf("Thread %d/%d gets (%d-%d, %d-%d) indices\n", tid, nthreads, i, endi, j, endj);
 		#endif
-		
-				
+	    
 		while (!globalConv) {
 
 			#pragma omp single
 			{
                 ++iters;
+				gettimeofday(&tts, NULL);
 			}
 
+			// red updates all even elements of matrix
             gettimeofday(&tcs, NULL);
-			jacobi(u_previous, u_current, i, endi, j, endj);
-            gettimeofday(&tcf, NULL);
-            compTime += (tcf.tv_sec - tcs.tv_sec) + (tcf.tv_usec - tcs.tv_usec) * 0.000001;
- 
-			if ((iters % C) == 0) {
-				conv = converge(u_previous, u_current, i, endi, j, endj);
-			}
-			
+			red(u_previous, u_current, i, endi, j, endj, omega);
 
+
+			black(u_previous, u_current, i, endi, j, endj, omega);
+            gettimeofday(&tcf, NULL);
+
+            comps[tid] += (tcf.tv_sec - tcs.tv_sec) + (tcf.tv_usec - tcs.tv_usec) * 0.000001;
+
+
+			
+			// check local convergence (no need for barrier here!)
+			conv = converge(u_previous, u_current, i, endi, j, endj);
 			#pragma omp atomic
 			converged += conv;
 
+			#pragma omp barrier
+	
 			if ((iters % C == 0) && (tid == 0)) {
 				if (converged == nthreads) { globalConv = 1; }
 			}
-			#pragma omp single
-			{ 
+			
+			// synchronize before next loop for correct clock ticking
+            #pragma omp single
+			{
                 converged = 0;
-                swap = u_previous; u_previous = u_current; u_current = swap;  
-            }
+                swap = u_previous; u_previous = u_current; u_current = swap;
+				gettimeofday(&ttf, NULL);
+				time += (ttf.tv_sec - tts.tv_sec) + (ttf.tv_usec - tts.tv_usec) * 0.000001;
+			}
+	
 		}
-	}             
-    gettimeofday(&ttf, NULL);
-    time += (ttf.tv_sec - tts.tv_sec) + (ttf.tv_usec - tts.tv_usec) * 0.000001;
-    
-	printf("Simple Jacobi - Iters: %d Time: %.3lf   Computation: %.3lf\n", iters, time, (compTime / nthreads));
-	fprint2d("testjacobi.out", u_current, global[0], global[1]);
+	}
+    for (i = 0; i < nthreads; ++i)
+        compTime = (compTime >= comps[i]) ? compTime : comps[i];
+
+	printf("RedBlackSOR\tIters: %d Time: %.3lf \t Computation: %.3lf\n", iters, time, compTime);
+	fprint2d("testredblack.out", u_current, global[0], global[1]);
 	return 0;
 }
